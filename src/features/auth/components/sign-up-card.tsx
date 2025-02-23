@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { Dispatch, SetStateAction, useState } from "react";
 import { SignInFlow } from "../types";
 import {
@@ -25,6 +26,7 @@ import {
 } from "@/components/ui/form";
 import Image from "next/image";
 import { icons } from "@/data/assets";
+import { useAuthActions } from "@convex-dev/auth/react";
 interface SignUpCardProps {
   setflow: Dispatch<SetStateAction<SignInFlow>>;
 }
@@ -56,6 +58,7 @@ const signUpFormSchema = z
   });
 
 const SignUpCard: React.FC<SignUpCardProps> = ({ setflow }) => {
+  const { signIn } = useAuthActions();
   const [is_loading, setis_loading] = useState(false);
   const form = useForm<z.infer<typeof signUpFormSchema>>({
     resolver: zodResolver(signUpFormSchema),
@@ -68,10 +71,16 @@ const SignUpCard: React.FC<SignUpCardProps> = ({ setflow }) => {
 
   const onSubmit = async (values: z.infer<typeof signUpFormSchema>) => {
     setis_loading(true);
-    console.log(values);
-    setTimeout(() => {
+    const formData = new FormData();
+    formData.append("email", values.email);
+    formData.append("password", values.password);
+    formData.append("flow", "signUp");
+    try {
+      await signIn("password", formData);
+    } catch (error: any) {
+      console.log(error?.name, error?.message);
       setis_loading(false);
-    }, 3000);
+    }
   };
   return (
     <Card className="w-full h-full p-8">
@@ -160,7 +169,7 @@ const SignUpCard: React.FC<SignUpCardProps> = ({ setflow }) => {
             variant={"outline"}
             className="w-full relative"
             size={"lg"}
-            onClick={() => {}}
+            onClick={() => void signIn("google")}
           >
             <FcGoogle className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl" />
             Continue with google
@@ -169,7 +178,7 @@ const SignUpCard: React.FC<SignUpCardProps> = ({ setflow }) => {
             variant={"outline"}
             className="w-full relative"
             size={"lg"}
-            onClick={() => {}}
+            onClick={() => void signIn("github")}
           >
             <FaGithub className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl" />
             Continue with github
